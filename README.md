@@ -8,10 +8,10 @@ This code runs in Battle for Wesnoth. Install it in your local add-ons directory
 
 ## Contributors
 
-**Contributors:**
+**Contributors:**  
 ahvth
 
-**Testers:**
+**Testers:**  
 ahvth  
 toshi-sanyoshi  
 franklyphresh  
