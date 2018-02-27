@@ -13,7 +13,7 @@ ahvth
 
 **Testers:**  
 ahvth  
-toshi-sanyoshi  
+toshi_sanyoshi  
 franklyphresh  
 
 ## License
