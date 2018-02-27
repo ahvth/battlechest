@@ -12,9 +12,9 @@ This code runs in Battle for Wesnoth. Install it in your local add-ons directory
 ahvth
 
 **Testers:**
-ahvth
-toshi-sanyoshi
-franklyphresh
+ahvth  
+toshi-sanyoshi  
+franklyphresh  
 
 ## License
 
