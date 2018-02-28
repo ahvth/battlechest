@@ -1,0 +1,784 @@
+[multiplayer]
+description="Two sides are fighting for control of a resource-rich city-state located in an isolated basin. Capture the bases and collect enough resources to win the game!"
+experience_modifier=70
+id="MP_bgm_basin"
+map_data="{~add-ons/Battlechest_Mod/maps/basin/basin.map}"
+name="2p - BC - Battle for the Basin (Full)"
+random_start_time=yes
+turns=-1
+victory_when_enemies_defeated=yes
+
+{DEFAULT_MUSIC_PLAYLIST}
+{DEFAULT_SCHEDULE}
+
+##----Define sides----##
+[side]
+    controller="human"
+    side=1
+    fog=yes
+    share_maps=no
+    share_view=no
+    team_name=""
+    user_team_name=""
+    gold=150
+    village_support=4
+    village_gold=0
+    income=0
+[/side]
+[side]
+    controller="human"
+    side=2
+    fog=yes
+    share_maps=no
+    share_view=no
+    team_name=""
+    user_team_name=""
+    gold=150
+    village_support=4
+    village_gold=0
+    income=0
+[/side]
+
+
+[event]
+name=prestart
+
+##----Draws labels for map landmarks (graveyards, bases, etc.)----##
+##TODO: clean up for easier reusability##
+
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="West Mines"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=7
+	y=22
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="North Farm"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=20
+	y=14
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="City"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=23
+	y=23
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="South Farm"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=26
+	y=31
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="East Mines"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=39
+	y=24
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="Graveyard"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=3
+	y=20
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="Graveyard"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=43
+	y=26
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="Graveyard"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=18
+	y=17
+[/label]
+[label]
+	color="221,221,221,0"
+	immutable=yes
+	team_name=""
+	text="Graveyard"
+	visible_in_fog=yes
+	visible_in_shroud=no
+	x=28
+	y=28
+[/label]
+
+##----Switch for preventing game over by leader death until victory points are filled----##
+
+[set_variable]
+    name=game_over
+    value=0
+[/set_variable]
+
+##----Identify leaders----##
+
+[modify_unit]
+[filter]
+canrecruit=yes
+side=1
+[/filter]
+id=side_1_leader
+[/modify_unit]
+
+[modify_unit]
+[filter]
+canrecruit=yes
+side=2
+[/filter]
+id=side_2_leader
+[/modify_unit]
+
+##----Initialize victory points and limits----##
+##TODO: Clean up for use with 3+ player maps##
+
+[set_variable]
+    name=side1vp
+    value=0
+[/set_variable]
+[set_variable]
+    name=side2vp
+    value=0
+[/set_variable]
+[set_variable]
+    name=side1gp
+    value=0
+[/set_variable]
+[set_variable]
+    name=side2gp
+    value=0
+[/set_variable]
+[set_variable]
+    name=victory_threshold
+    value=150
+[/set_variable]
+
+##----Define Objectives message----##
+
+[objectives]
+[note]
+description= _ "Rules: Capture the 5 bases in the center of the map to collect resources. Each base yields 2 resources per turn. Leaders respawn, and killing them yields 6 resources."
+[/note]
+[objective]
+    description= _ "Be the first to gather $victory_threshold| Resources"
+    condition=win
+[/objective]
+[objective]
+    description= _ "Your enemy beats you to $victory_threshold| Resources"
+    condition=lose
+[/objective]
+[/objectives]
+[/event]
+
+##----Awards points for killing opposing leader, handle resurrection----##
+
+#LEADER DEATH/RESURRECTION SIDE 2
+[event]
+name=die
+first_time_only=no
+
+#SIDE 1 LEADER
+[filter]
+canrecruit=yes
+side=1
+[/filter]
+[set_variable]
+    name=side2vp
+    add=6
+[/set_variable]
+[set_variable]
+    name=side1vp
+    sub=6
+[/set_variable]
+[if]
+[variable]
+name=game_over
+numerical_equals=0
+[/variable]
+[then]
+
+#SIDE ONE FIND OPTIMAL RES LOCATION
+
+[if]
+    {CENTER_AREA_SAFE_1}
+    {SOUTH_AREA_SAFE_1}
+    {SOUTH_FARM_OWNED_1}
+[then]
+    {REZ_SOUTH_GY_1}
+[/then]
+[else]
+    [if]
+        {WEST_AREA_SAFE_1}
+        {WEST_MINE_OWNED_1}
+    [then]
+        {REZ_WEST_GY_1}
+    [/then]
+    [else]
+        [if]
+            {EAST_AREA_SAFE_1}
+            {EAST_MINE_OWNED_1}
+        [then]
+            {REZ_EAST_GY_1}
+        [/then]
+        [else]
+            [if]
+                {CENTER_AREA_SAFE_1}
+                {CITY_OWNED_1}
+                {NORTH_FARM_OWNED_1}
+            [then]
+                {REZ_NORTH_GY_1}
+            [/then]
+            [else]
+                [if]
+                    {NORTH_AREA_SAFE_1}
+                    {NORTH_FARM_OWNED_1}
+                [then]
+                    {REZ_NORTH_GY_1}
+                [/then]
+                [else]
+                    [if]
+                        {SOUTH_FARM_OWNED_1}
+                        {CENTER_AREA_SAFE_1}
+                    [then]
+                        {REZ_SOUTH_GY_1}
+                    [/then]
+                    [else]
+                        [if]
+                            {WEST_MINE_OWNED_1}
+                        [then]
+                            {REZ_WEST_GY_1}
+                        [/then]
+                        [else]
+                            [if]
+                                {EAST_MINE_OWNED_1}
+                            [then]
+                                {REZ_EAST_GY_1}
+                            [/then]
+                            [else]
+                                [if]
+                                    {CITY_OWNED_1}
+                                    {NORTH_AREA_SAFE_1}
+                                [then]
+                                    {REZ_NORTH_GY_1}
+                                [/then]
+                                [else]
+                                    [if]
+                                        {CENTER_AREA_SAFE_1}
+                                        {NORTH_FARM_OWNED_1}
+                                    [then]
+                                        {REZ_NORTH_GY_1}
+                                    [/then]
+                                    [else]
+                                        {REZ_NORTH_BASE_1}
+                                    [/else]
+                                    [/if]
+                                [/else]
+                                [/if]
+                            [/else]
+                            [/if]
+                        [/else]
+                        [/if]
+                    [/else]
+                    [/if]
+                [/else]
+                [/if]
+            [/else]
+            [/if]
+        [/else]
+        [/if]
+    [/else]
+    [/if]
+[/else]
+[/if]
+[/then]
+[/if]
+{POINT_LABEL_UPDATE}
+[/event]
+
+#LEADER DEATH/RESURRECTION SIDE 2
+
+[event]
+name=die
+first_time_only=no
+#SIDE 2 LEADER
+[filter]
+canrecruit=yes
+side=2
+[/filter]
+[set_variable]
+    name=side1vp
+    add=6
+[/set_variable]
+[set_variable]
+    name=side2vp
+    sub=6
+[/set_variable]
+[if]
+[variable]
+name=game_over
+numerical_equals=0
+[/variable]
+[then]
+
+#SIDE TWO FIND OPTIMAL RES LOCATION
+
+[if]
+    {NORTH_AREA_SAFE_2}
+    {CENTER_AREA_SAFE_2}
+    {NORTH_FARM_OWNED_2}
+[then]
+    {REZ_NORTH_GY_2}
+[/then]
+[else]
+    [if]
+        {WEST_AREA_SAFE_2}
+        {WEST_MINE_OWNED_2}
+    [then]
+        {REZ_WEST_GY_2}
+    [/then]
+    [else]
+        [if]
+            {EAST_AREA_SAFE_2}
+            {EAST_MINE_OWNED_2}
+        [then]
+            {REZ_EAST_GY_2}
+        [/then]
+        [else]
+            [if]
+                {CENTER_AREA_SAFE_2}
+                {CITY_OWNED_2}
+                {SOUTH_FARM_OWNED_2}
+            [then]
+                {REZ_SOUTH_GY_2}
+            [/then]
+            [else]
+                [if]
+                    {SOUTH_AREA_SAFE_2}
+                    {SOUTH_FARM_OWNED_2}
+                [then]
+                    {REZ_SOUTH_BASE_2}
+                [/then]
+                [else]
+                    [if]
+                        {NORTH_FARM_OWNED_2}
+                        {CENTER_AREA_SAFE_2}
+                    [then]
+                        {REZ_NORTH_GY_2}
+                    [/then]
+                    [else]
+                        [if]
+                            {WEST_MINE_OWNED_2}
+                        [then]
+                            {REZ_WEST_GY_2}
+                        [/then]
+                        [else]
+                            [if]
+                                {EAST_MINE_OWNED_2}
+                            [then]
+                                {REZ_EAST_GY_2}
+                            [/then]
+                            [else]
+                                [if]
+                                    {CITY_OWNED_2}
+                                    {SOUTH_AREA_SAFE_2}
+                                [then]
+                                    {REZ_SOUTH_GY_2}
+                                [/then]
+                                [else]
+                                    [if]
+                                        {SOUTH_FARM_OWNED_2}
+                                        {CENTER_AREA_SAFE_2}
+                                    [then]
+                                        {REZ_SOUTH_GY_2}
+                                    [/then]
+                                    [else]
+                                        {REZ_SOUTH_BASE_2}
+                                    [/else]
+                                    [/if]
+                                [/else]
+                                [/if]
+                            [/else]
+                            [/if]
+                        [/else]
+                        [/if]
+                    [/else]
+                    [/if]
+                [/else]
+                [/if]
+            [/else]
+            [/if]
+        [/else]
+        [/if]
+    [/else]
+    [/if]
+[/else]
+[/if]
+[/then]
+[/if]
+{POINT_LABEL_UPDATE}
+[/event]
+
+#REFUND/AWARD FOR KILLED UNITS SIDE 1
+
+[event]
+name=die
+first_time_only=no
+[filter]
+canrecruit=no
+side=1
+[not]
+race=undead
+[/not]
+[/filter]
+[gold]
+amount=12
+side=1
+[/gold]
+[/event]
+
+#REFUND/AWARD FOR KILLED UNITS SIDE 2
+
+[event]
+name=die
+first_time_only=no
+[filter]
+canrecruit=no
+side=2
+[not]
+race=undead
+[/not]
+[/filter]
+[gold]
+amount=12
+side=2
+[/gold]
+[/event]
+
+#CAPTURE MESSAGES
+
+[event]
+name=capture
+first_time_only=no
+[filter]
+x=20
+y=14
+[/filter]
+{CAPTURE_ALERT "North Farm"}
+[/event]
+
+[event]
+name=capture
+first_time_only=no
+[filter]
+    x=7
+    y=22
+[/filter]
+{CAPTURE_ALERT "West Mine"}
+[/event]
+
+[event]
+name=capture
+first_time_only=no
+[filter]
+    x=39
+    y=24
+[/filter]
+{CAPTURE_ALERT "East Mine"}
+[/event]
+
+[event]
+name=capture
+first_time_only=no
+[filter]
+    x=23
+    y=23
+[/filter]
+{CAPTURE_ALERT "The City"}
+[/event]
+
+[event]
+name=capture
+first_time_only=no
+[filter]
+    x=26
+    y=31
+[/filter]
+{CAPTURE_ALERT "South Farm"}
+[/event]
+
+##----Reactive events that occur each turn----##
+
+[event]
+name=new turn
+first_time_only=no
+
+#SCAN FOR VILLAGE OWNERSHIP
+[store_villages]
+    [filter]
+    x=20,26,23,7,39
+    y=14,31,23,22,24
+    [/filter]
+    variable=gather_points
+[/store_villages]
+[store_villages]
+    [filter]
+    x=20
+    y=14
+    [/filter]
+    variable=north_farm
+[/store_villages]
+[store_villages]
+    [filter]
+    x=26
+    y=31
+    [/filter]
+    variable=south_farm
+[/store_villages]
+[store_villages]
+    [filter]
+    x=23
+    y=23
+    [/filter]
+    variable=center_city
+[/store_villages]
+[store_villages]
+    [filter]
+    x=7
+    y=22
+    [/filter]
+    variable=west_mine
+[/store_villages]
+[store_villages]
+    [filter]
+    x=39
+    y=24
+    [/filter]
+    variable=east_mine
+[/store_villages]
+
+{POINT_LABEL_UPDATE}
+
+[/event]
+
+[event]
+    name=new turn
+    first_time_only=no
+
+#AWARD POINTS SIDE ONE
+
+[if]
+    {NORTH_FARM_OWNED_1}
+    [then]
+    [set_variable]
+    name=side1vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {SOUTH_FARM_OWNED_1}
+    [then]
+    [set_variable]
+    name=side1vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {WEST_MINE_OWNED_1}
+    [then]
+    [set_variable]
+    name=side1vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {EAST_MINE_OWNED_1}
+    [then]
+    [set_variable]
+    name=side1vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {CITY_OWNED_1}
+    [then]
+    [set_variable]
+    name=side1vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+
+#AWARD POINTS SIDE TWO
+
+[if]
+    {NORTH_FARM_OWNED_2}
+    [then]
+    [set_variable]
+    name=side2vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {SOUTH_FARM_OWNED_2}
+    [then]
+    [set_variable]
+    name=side2vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {WEST_MINE_OWNED_2}
+    [then]
+    [set_variable]
+    name=side2vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {EAST_MINE_OWNED_2}
+    [then]
+    [set_variable]
+    name=side2vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+[if]
+    {CITY_OWNED_2}
+    [then]
+    [set_variable]
+    name=side2vp
+    add=2
+    [/set_variable]
+    [/then]
+    [else]
+    [/else]
+[/if]
+{POINT_LABEL_UPDATE}
+[/event]
+
+[event]
+name=side turn
+first_time_only=no
+
+#DEFINE SIDE ONE VICTORY
+[if]
+    [variable]
+    name=side1vp
+    greater_than_equal_to=$victory_threshold
+    [/variable]
+    [then]
+        [if]
+        [variable]
+        name=side1vp
+        numerical_equals=$side2vp
+        [/variable]
+        [then]
+        [set_variable]
+        name=victory_threshold
+        add=50
+        [/set_variable]
+        [/then]
+        [else]
+        [set_variable]
+        game_over=1
+        [/set_variable]
+        [kill]
+        canrecruit=yes
+        side=2
+        [/kill]
+        [/else]
+        [/if]
+    [/then]
+[/if]
+
+#DEFINE SIDE TWO VICTORY
+[if]
+    [variable]
+    name=side2vp
+    greater_than_equal_to=$victory_threshold
+    [/variable]
+    [then]
+        [if]
+        [variable]
+        name=side2vp
+        numerical_equals=$side1vp
+        [/variable]
+        [then]
+        [set_variable]
+        name=victory_threshold
+        add=50
+        [/set_variable]
+        [/then]
+        [else]
+        [set_variable]
+        game_over=1
+        [/set_variable]
+        [kill]
+        canrecruit=yes
+        side=1
+        [/kill]
+        [/else]
+        [/if]
+    [/then]
+[/if]
+[/event]
+[/multiplayer]
